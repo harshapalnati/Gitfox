@@ -5,20 +5,21 @@ use reqwest::Client;
 use tokio::task;
 use std::env;
 use dotenv::dotenv;
-use log::{info, error};
 
 async fn ai_review(Json(payload): Json<Value>) -> Json<Value> {
+
     task::spawn(async move {
         if let Some(repo) = payload["repository"].as_str() {
             if let Some(pr_number) = payload["pr_number"].as_i64() {
                 if let Some(commit_sha) = payload["commit_sha"].as_str() {
-                    info!("📌 Running AI Review for PR #{} in {}", pr_number, repo);
+                    log::info!("📌 Running AI Review for PR #{} in {}", pr_number, repo);
                     match analyze_pr(repo, pr_number, commit_sha).await {
                         Ok(comment) => {
-                            info!("✅ AI Review Complete! Posting Comment...");
+                            println!("{}", comment);
+                            log::info!("✅ AI Review Complete! Posting Comment...");
                             post_pr_comment(repo, pr_number, comment).await.ok();
                         }
-                        Err(e) => error!("❌ AI Review Failed: {}", e),
+                        Err(e) => log::error!("❌ AI Review Failed: {}", e),
                     }
                 }
             }
@@ -30,7 +31,7 @@ async fn ai_review(Json(payload): Json<Value>) -> Json<Value> {
 
 async fn analyze_pr(repo: &str, pr_number: i64, _commit_sha: &str) -> Result<String, reqwest::Error> {
     let github_token = env::var("GITHUB_TOKEN").expect("⚠️ GITHUB_TOKEN not set");
-    info!("🔑 Using GitHub Token: {}", &github_token[..10]); // Partial log for security
+    log::info!("🔑 Using GitHub Token: {}", &github_token[..10]); // Partial log for security
     let openai_key = env::var("OPENAI_API_KEY").expect("⚠️ OPENAI_API_KEY not set");
 
     let client = Client::new();
@@ -50,9 +51,11 @@ async fn analyze_pr(repo: &str, pr_number: i64, _commit_sha: &str) -> Result<Str
     for file in pr_response.as_array().unwrap_or(&vec![]) {
         if let Some(filename) = file["filename"].as_str() {
             if let Some(patch) = file["patch"].as_str() {
-                info!("📄 Analyzing {} with GPT-4...", filename);
+                log::info!("📄 Analyzing {} with GPT-4...", filename);
                 let ai_comment = analyze_with_gpt4(filename, patch, &openai_key).await?;
+                println!("{}", ai_comment);
                 comments.push(format!("📌 **{}**\n{}", filename, ai_comment));
+
             }
         }
     }
@@ -64,22 +67,28 @@ async fn analyze_with_gpt4(filename: &str, code_diff: &str, openai_key: &str) ->
     let client = reqwest::Client::new();
 
     let prompt = format!(
-        "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}",
-        format!("### 📝 AI Code Review for `{}`\n", filename),
-        "You are an **AI code reviewer**. Analyze the following GitHub PR change and provide a **detailed summary** with clear points.\n",
+        "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}",
+        format!("### 📝 AI Code Review for `{}`", filename),
+        "",
+        "You are an **AI code reviewer**. Analyze the following GitHub PR change and provide a **detailed summary** with clear points.",
+        "",
         "### 📌 Summary of Changes:",
         "- Explain what changes were made.",
         "- Highlight any **key improvements**.",
-        "- Mention any **potential issues**.\n",
+        "- Mention any **potential issues**.",
+        "",
         "### 🔒 Security & Vulnerability Check:",
         "- Check for **security vulnerabilities**.",
         "- Identify **possible exploits or risks**.",
-        "- Suggest **best security practices**.\n",
+        "- Suggest **best security practices**.",
+        "",
         "### 🏗️ Code Quality & Best Practices:",
         "- Detect **code smells**.",
         "- Recommend **performance improvements**.",
-        "- Suggest **better coding practices**.\n",
-        format!("**Code Changes in `{}`:**\n```\n{}\n```", filename, code_diff)
+        "- Suggest **better coding practices**.",
+        "",
+        format!("**Code Changes in `{}`:**", filename),
+        format!("```\n{}\n```", code_diff)
     );
 
     let payload = serde_json::json!({
@@ -136,14 +145,13 @@ async fn main() {
 
     let app = Router::new().route("/review", post(ai_review));
     let addr = SocketAddr::from(([0, 0, 0, 0], 5000));
-
-    info!("🚀 AI Review Service Running on {}", addr);
+    dotenv::dotenv().ok();
+    println!("🚀 AI Review Service Running...");
     
     match env::var("GITHUB_TOKEN") {
-        Ok(token) => info!("🔑 GITHUB_TOKEN Loaded: {}", &token[..10]),
-        Err(_) => error!("❌ ERROR: GITHUB_TOKEN not set!"),
+        Ok(token) => println!("🔑 GITHUB_TOKEN Loaded: {}", &token[..10]), // Print only first 10 chars for security
+        Err(_) => println!("❌ ERROR: GITHUB_TOKEN not set!"),
     }
-
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await

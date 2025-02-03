@@ -7,6 +7,7 @@ use env_logger;
 
 #[post("/webhook")]
 async fn handle_webhook(payload: web::Json<Value>) -> impl Responder {
+    println!("Webhook Received");
     log::info!("📦 Webhook Received: {:?}", payload);
 
     // Extract PR details
@@ -20,7 +21,10 @@ async fn handle_webhook(payload: web::Json<Value>) -> impl Responder {
 
             // Send PR details to AI Review Service
             match send_to_ai_review(repo, number, sha).await {
-                Ok(_) => log::info!("✅ Successfully sent to AI Review Service"),
+                Ok(_) => {
+                    println!("Successfully sent to AI Review Service");
+                    log::info!("✅ Successfully sent to AI Review Service");
+                }
                 Err(e) => log::error!("❌ Failed to send to AI Review: {}", e),
             }
         }
@@ -31,10 +35,11 @@ async fn handle_webhook(payload: web::Json<Value>) -> impl Responder {
 
 async fn send_to_ai_review(repo: &str, pr_number: i64, pr_sha: &str) -> Result<(), reqwest::Error> {
     let client = Client::builder()
-        .timeout(std::time::Duration::from_secs(120)) // Increased timeout
+        .timeout(std::time::Duration::from_secs(120))
         .build()?;
 
-    let ai_service_url = env::var("AI_SERVICE_URL").unwrap_or_else(|_| "http://ai-review:5000/review".to_string());
+    let ai_service_url = env::var("AI_SERVICE_URL")
+        .unwrap_or_else(|_| "http://localhost:5000/review".to_string());
 
     let payload = serde_json::json!({
         "repository": repo,
@@ -62,11 +67,13 @@ async fn main() -> std::io::Result<()> {
         .parse::<u16>()
         .expect("PORT must be a number");
 
+    println!("🚀 Webhook Listener running on port {}", port);
     log::info!("🚀 Webhook Listener running on port {}", port);
 
     HttpServer::new(|| {
         App::new()
-            .service(handle_webhook)
+            .service(web::scope("")
+                .service(handle_webhook))
     })
     .bind(("0.0.0.0", port))?
     .run()
