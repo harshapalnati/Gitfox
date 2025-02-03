@@ -1,0 +1,8 @@
+[workspace]
+members = [
+    "services/ai-review",
+    "services/webhook-listener"
+]
+
+# Add this line to use the 2021 edition resolver
+resolver = "2"
