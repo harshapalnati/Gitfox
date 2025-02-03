@@ -5,7 +5,6 @@ use reqwest::Client;
 use tokio::task;
 use std::env;
 use dotenv::dotenv;
-use futures_util::StreamExt;
 use log::{info, error};
 
 async fn ai_review(Json(payload): Json<Value>) -> Json<Value> {
@@ -65,22 +64,22 @@ async fn analyze_with_gpt4(filename: &str, code_diff: &str, openai_key: &str) ->
     let client = reqwest::Client::new();
 
     let prompt = format!(
-        "### 📝 AI Code Review for `{}`\n\n"
-        "You are an **AI code reviewer**. Analyze the following GitHub PR change and provide a **detailed summary** with clear points.\n\n"
-        "### 📌 Summary of Changes:\n"
-        "- Explain what changes were made.\n"
-        "- Highlight any **key improvements**.\n"
-        "- Mention any **potential issues**.\n\n"
-        "### 🔒 Security & Vulnerability Check:\n"
-        "- Check for **security vulnerabilities**.\n"
-        "- Identify **possible exploits or risks**.\n"
-        "- Suggest **best security practices**.\n\n"
-        "### 🏗️ Code Quality & Best Practices:\n"
-        "- Detect **code smells**.\n"
-        "- Recommend **performance improvements**.\n"
-        "- Suggest **better coding practices**.\n\n"
-        "**Code Changes in `{}`:**\n```\n{}\n```",
-        filename, filename, code_diff
+        "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}",
+        format!("### 📝 AI Code Review for `{}`\n", filename),
+        "You are an **AI code reviewer**. Analyze the following GitHub PR change and provide a **detailed summary** with clear points.\n",
+        "### 📌 Summary of Changes:",
+        "- Explain what changes were made.",
+        "- Highlight any **key improvements**.",
+        "- Mention any **potential issues**.\n",
+        "### 🔒 Security & Vulnerability Check:",
+        "- Check for **security vulnerabilities**.",
+        "- Identify **possible exploits or risks**.",
+        "- Suggest **best security practices**.\n",
+        "### 🏗️ Code Quality & Best Practices:",
+        "- Detect **code smells**.",
+        "- Recommend **performance improvements**.",
+        "- Suggest **better coding practices**.\n",
+        format!("**Code Changes in `{}`:**\n```\n{}\n```", filename, code_diff)
     );
 
     let payload = serde_json::json!({
