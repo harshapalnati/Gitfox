@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package ai_review;
+
+// AI Review Service
+service AiReview {
+  rpc AnalyzePr (PrRequest) returns (PrResponse);
+}
+
+// Request Data
+message PrRequest {
+  string repository = 1;
+  int64 pr_number = 2;
+  string commit_sha = 3;
+}
+
+// Response Data
+message PrResponse {
+  string summary = 1;
+}

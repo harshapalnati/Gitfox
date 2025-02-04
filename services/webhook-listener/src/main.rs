@@ -1,31 +1,45 @@
+use tonic::transport::Channel;
 use actix_web::{post, web, App, HttpResponse, HttpServer, Responder};
 use serde_json::Value;
-use reqwest::Client;
-use std::env;
-use dotenv::dotenv;
-use env_logger;
+use tokio::sync::Mutex;
+use std::sync::Arc;
+
+// Include generated gRPC client
+pub mod ai_review {
+    include!("generated/ai_review.rs");
+}
+
+use ai_review::ai_review_client::AiReviewClient;
+use ai_review::PrRequest;
 
 #[post("/webhook")]
-async fn handle_webhook(payload: web::Json<Value>) -> impl Responder {
-    println!("Webhook Received");
-    log::info!("📦 Webhook Received: {:?}", payload);
+async fn handle_webhook(payload: web::Json<Value>, client: web::Data<Arc<Mutex<AiReviewClient<Channel>>>>) -> impl Responder {
+    println!("📦 Webhook Received: {:?}", payload);
 
-    // Extract PR details
     if let Some(pull_request) = payload.get("pull_request") {
         if let (Some(repo), Some(number), Some(sha)) = (
             payload["repository"]["full_name"].as_str(),
             pull_request["number"].as_i64(),
             pull_request["head"]["sha"].as_str(),
         ) {
-            log::info!("🔄 Processing PR #{} in {}", number, repo);
+            println!("🔄 Sending PR #{} to AI Review Service", number);
 
-            // Send PR details to AI Review Service
-            match send_to_ai_review(repo, number, sha).await {
-                Ok(_) => {
-                    println!("Successfully sent to AI Review Service");
-                    log::info!("✅ Successfully sent to AI Review Service");
-                }
-                Err(e) => log::error!("❌ Failed to send to AI Review: {}", e),
+            let mut client = client.lock().await;
+            let request = tonic::Request::new(PrRequest {
+                repository: repo.to_string(),
+                pr_number: number,
+                commit_sha: sha.to_string(),
+            });
+
+            match client.analyze_pr(request).await {
+                Ok(response) => println!("✅ AI Review Summary: {}", response.into_inner().summary),
+                Err(e) => {
+                    eprintln!("❌ Failed to get AI Review: {}", e);
+                    return HttpResponse::InternalServerError().json(serde_json::json!({
+                        "error": "Failed to get AI review",
+                        "details": format!("{}", e)
+                    }));
+                },
             }
         }
     }
@@ -33,49 +47,25 @@ async fn handle_webhook(payload: web::Json<Value>) -> impl Responder {
     HttpResponse::Ok().json(serde_json::json!({ "status": "received" }))
 }
 
-async fn send_to_ai_review(repo: &str, pr_number: i64, pr_sha: &str) -> Result<(), reqwest::Error> {
-    let client = Client::builder()
-        .timeout(std::time::Duration::from_secs(120))
-        .build()?;
-
-    let ai_service_url = env::var("AI_SERVICE_URL")
-        .unwrap_or_else(|_| "http://localhost:5000/review".to_string());
-
-    let payload = serde_json::json!({
-        "repository": repo,
-        "pr_number": pr_number,
-        "commit_sha": pr_sha
-    });
-
-    let response = client
-        .post(&ai_service_url)
-        .json(&payload)
-        .send()
-        .await?;
-
-    log::info!("🔍 AI Service Response: {:?}", response.text().await?);
-    Ok(())
-}
-
-#[actix_web::main]
+#[tokio::main]
 async fn main() -> std::io::Result<()> {
-    dotenv().ok();
-    env_logger::init();
+    let grpc_client = match AiReviewClient::connect("http://ai-review:50051").await {
+        Ok(client) => client,
+        Err(e) => {
+            eprintln!("❌ Failed to connect to AI Review Service: {}", e);
+            std::process::exit(1);
+        }
+    };
 
-    let port = env::var("PORT")
-        .unwrap_or_else(|_| "3000".to_string())
-        .parse::<u16>()
-        .expect("PORT must be a number");
+    let shared_client = web::Data::new(Arc::new(Mutex::new(grpc_client)));
 
-    println!("🚀 Webhook Listener running on port {}", port);
-    log::info!("🚀 Webhook Listener running on port {}", port);
-
-    HttpServer::new(|| {
+    println!("🚀 Webhook Listener running on port 3000");
+    HttpServer::new(move || {
         App::new()
-            .service(web::scope("")
-                .service(handle_webhook))
+            .app_data(shared_client.clone())
+            .service(handle_webhook)
     })
-    .bind(("0.0.0.0", port))?
+    .bind(("0.0.0.0", 3000))?
     .run()
     .await
 }
