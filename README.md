@@ -33,28 +33,32 @@ To maintain clean code contributions, enforce the following branch rules in GitH
   - Squash commits before merging.
 
 ### Enforcing Branch Rules
-1. Go to **GitHub → Repo → Settings → Branches**.
+1. Go to **GitHub → Repo → Settings → Rules**.
 2. Click **Add branch protection rule**.
+![alt text](image.png)
+![alt text](image-1.png)
 3. Enable **Require pull request reviews before merging**.
 4. Enable **Require status checks to pass before merging**.
+![alt text](image-2.png)
 
 ---
 ## 4. Setting Up ngrok for Local Webhook Testing
 To test webhook events locally, set up `ngrok`:
+https://dashboard.ngrok.com/get-started/setup/windows
 
 ### Step 1: Start ngrok
 ```sh
-grok http 8080
+grok http 3000
 ```
 This will generate a public URL, e.g., `https://xyz.ngrok.io`
-
+![alt text](image-3.png)
 ### Step 2: Update Webhook URL in GitHub
 1. Go to **GitHub → Settings → Webhooks**.
 2. Click **Add webhook**.
 3. Enter the `ngrok` URL (`https://xyz.ngrok.io`) with `/webhook` endpoint.
 4. Set **Content Type** to `application/json`.
 5. Click **Save**.
-
+![alt text](image-4.png)
 ---
 ## 5. API Documentation
 The GitFox API supports the following endpoints:

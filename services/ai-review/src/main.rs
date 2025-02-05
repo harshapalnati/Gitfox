@@ -22,10 +22,11 @@ impl AiReview for AiReviewService {
         let req = request.into_inner();
         println!("📌 Running AI Review for PR #{} in {}", req.pr_number, req.repository);
     
-        // **🔹 Step 1: Mark PR as "pending" immediately**
-        if let Err(e) = set_github_pr_status(&req.repository, &req.commit_sha, "pending", "AI Review in progress").await {
-            eprintln!("⚠️ Failed to set pending status on GitHub: {}", e);
-        }
+      // **🔹 Step 1: Mark PR as "pending" immediately**
+    if let Err(e) = set_github_pr_status(&req.repository, &req.commit_sha, "pending", "AI Review in progress").await {
+        eprintln!("⚠️ Failed to set pending status on GitHub: {}", e);
+        return Err(Status::internal("Failed to set pending status on GitHub"));
+    }
     
         // **🔹 Step 2: Fetch AI Review from OpenAI**
         match get_openai_analysis(&req.repository, req.pr_number, &req.commit_sha).await {
