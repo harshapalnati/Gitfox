@@ -5,7 +5,7 @@ GitFox is an AI-powered GitHub code review bot that automates pull request analy
 
 GitFox is an open-source project. It is strictly not for sale or commercial use. Any attempts to monetize or sell GitFox violate its intended purpose.
 
-Disclaimer: GitFox is an independently developed open-source project and is not affiliated with, endorsed by, or associated with any other similar platform.  This project is released under the MIT License, and it is the responsibility of contributors and users to ensure compliance with relevant laws and regulations.
+Disclaimer: GitFox is an independently developed open-source project and is not affiliated with, endorsed by, or associated with any other similar platform.  This project is released under the Apache License, and it is the responsibility of contributors and users to ensure compliance with relevant laws and regulations.
 
 ---
 ## 2. Installation and Setup
