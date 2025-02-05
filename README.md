@@ -21,6 +21,17 @@ git clone https://github.com/your-org/gitfox.git
 cd gitfox
 ```
 
+### Create a `.env` File
+GitFox requires environment variables for configuration. Create a `.env` file in the project root and define the required values:
+
+create .env file in root and in the infra directory
+```ini
+GITHUB_TOKEN=your_github_token
+OPENAI_API_KEY=your_openai_api_key
+```
+> **Note:** Ensure the `.env` file is **not committed** to your repository. Add it to `.gitignore`.
+
+
 ### Run All Services with Docker
 ```sh
 docker-compose up --build
