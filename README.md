@@ -11,7 +11,6 @@ Disclaimer: GitFox is an independently developed open-source project and is not 
 GitFox collects **non-sensitive usage statistics**, such as the number of PRs reviewed and unique repositories using GitFox. This data is used to improve the project and assist with funding efforts. No personal or sensitive data is collected.
 
 
----
 ## 2. Installation and Setup
 ### Prerequisites
 Ensure you have the following installed on your system:
