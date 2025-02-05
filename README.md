@@ -66,7 +66,7 @@ https://dashboard.ngrok.com/get-started/setup/windows
 
 ### Step 1: Start ngrok
 ```sh
-grok http 3000
+ngrok http http://localhost:3000 
 ```
 This will generate a public URL, e.g., `https://xyz.ngrok.io`
 ![alt text](image-3.png)
