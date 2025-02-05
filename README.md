@@ -3,6 +3,8 @@
 ## 1. Project Overview
 GitFox is an AI-powered GitHub code review bot that automates pull request analysis, detects bugs, and provides inline feedback using AI models like GPT-4 and CodeBERT. The tool integrates seamlessly with GitHub repositories, offering automated review suggestions and improving code quality.
 
+GitFox is an open-source project. It is strictly not for sale or commercial use. Any attempts to monetize or sell GitFox violate its intended purpose.
+
 ---
 ## 2. Installation and Setup
 ### Prerequisites
