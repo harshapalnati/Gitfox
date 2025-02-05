@@ -7,6 +7,10 @@ GitFox is an open-source project. It is strictly not for sale or commercial use.
 
 Disclaimer: GitFox is an independently developed open-source project and is not affiliated with, endorsed by, or associated with any other similar platform.  This project is released under the Apache License, and it is the responsibility of contributors and users to ensure compliance with relevant laws and regulations.
 
+### **Data Collection Disclaimer**
+GitFox collects **non-sensitive usage statistics**, such as the number of PRs reviewed and unique repositories using GitFox. This data is used to improve the project and assist with funding efforts. No personal or sensitive data is collected.
+
+
 ---
 ## 2. Installation and Setup
 ### Prerequisites
